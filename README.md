@@ -8,4 +8,3 @@ Stuff I use for search infra (OpenSearch/Solr), CI/CD, and ops. Terraform for AW
 - **ansible/solr-zk-rolling-update** – Rolling restart with ZK quorum check, one node at a time. Edit `inventory/hosts.yml` then: `ansible-playbook -i inventory/hosts.yml playbook.yml`.
 - **scripts/** – `dev-bootstrap-solr.sh` spins up ZK + Solr in Docker locally. `validate-index-shards.sh` – pass INDEX_NAME and either OPENSEARCH_ENDPOINT or SOLR_URL to check index/collection and doc count.
 
-Terraform 1.3+, Ansible, Docker. For validate script you need curl and jq.

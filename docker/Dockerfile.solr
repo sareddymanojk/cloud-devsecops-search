@@ -1,11 +1,16 @@
+# Solr 9 runtime for ECS/K8s. Use a task/pod role that can pull this image;
+# if you need AWS APIs (Secrets Manager, etc.) attach that policy to the task role too.
+
 FROM eclipse-temurin:17-jre-jammy AS runtime
 
 ENV SOLR_VERSION=9.3.0
 ENV SOLR_HOME=/var/solr/data
 ENV SOLR_USER=solr
 
+# non-root – required for most clusters and avoids permission issues on SOLR_HOME
 RUN groupadd -r $SOLR_USER && useradd -r -g $SOLR_USER $SOLR_USER
 
+# curl = healthchecks/liveness; lsof/procps = debugging and Solr scripts
 RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends curl lsof procps; \
@@ -20,4 +25,6 @@ USER $SOLR_USER
 EXPOSE 8983
 WORKDIR /opt/solr
 
-CMD ["bin/solr", "start", "-f", "-force"]
+# -f foreground, -force skip prompts. For SolrCloud set SOLR_OPTS="-DzkHost=zk:2181" (or your ZK) in the task def.
+ENTRYPOINT ["bin/solr"]
+CMD ["start", "-f", "-force"]

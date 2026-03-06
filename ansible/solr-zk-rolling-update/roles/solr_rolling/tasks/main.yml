@@ -1,0 +1,23 @@
+- name: Stop Solr
+  command: "{{ solr_bin }} stop -p {{ solr_port }}"
+  register: stop_result
+  failed_when: false
+  changed_when: stop_result.rc == 0
+
+- name: Wait for process to exit
+  wait_for:
+    path: "/proc/{{ item }}/cmdline"
+    state: absent
+  loop: "{{ ansible_facts['solr_pid'] | default([]) }}"
+  when: ansible_facts.get('solr_pid') is defined
+  ignore_errors: true
+
+- name: Apply patches or config (placeholder - drop your yum/apt or copy tasks here)
+  debug:
+    msg: "Patch step - add your package update or config sync"
+  when: action | default('restart') == 'patch'
+
+- name: Start Solr
+  command: "{{ solr_bin }} start -p {{ solr_port }} -f -force"
+  async: 45
+  poll: 5

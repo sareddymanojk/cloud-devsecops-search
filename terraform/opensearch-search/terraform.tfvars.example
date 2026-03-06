@@ -1,0 +1,13 @@
+project_name   = "website-search"
+environment    = "dev"
+vpc_id         = "vpc-xxxx"
+subnet_ids     = ["subnet-aaa", "subnet-bbb"]
+allowed_cidr_blocks = ["10.0.0.0/16"]
+instance_count = 2
+instance_type  = "r6g.large.search"
+ebs_volume_size = 100
+log_retention_days = 30
+
+tags = {
+  Team = "Search"
+}

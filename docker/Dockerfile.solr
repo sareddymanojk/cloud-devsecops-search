@@ -1,0 +1,23 @@
+FROM eclipse-temurin:17-jre-jammy AS runtime
+
+ENV SOLR_VERSION=9.3.0
+ENV SOLR_HOME=/var/solr/data
+ENV SOLR_USER=solr
+
+RUN groupadd -r $SOLR_USER && useradd -r -g $SOLR_USER $SOLR_USER
+
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends curl lsof procps; \
+  rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /opt/solr && \
+  curl -sSL "https://archive.apache.org/dist/solr/solr/${SOLR_VERSION}/solr-${SOLR_VERSION}.tgz" | tar -xz -C /opt/solr --strip-components=1
+
+RUN chown -R $SOLR_USER:$SOLR_USER /opt/solr /var/solr
+
+USER $SOLR_USER
+EXPOSE 8983
+WORKDIR /opt/solr
+
+CMD ["bin/solr", "start", "-f", "-force"]

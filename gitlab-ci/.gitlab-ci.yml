@@ -1,0 +1,59 @@
+stages:
+  - validate
+  - build
+  - security
+  - deploy
+
+variables:
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  SOLR_VERSION: "9.3"
+
+validate:terraform:
+  stage: validate
+  image:
+    name: hashicorp/terraform:1.5
+    entrypoint: [""]
+  script:
+    - cd terraform/opensearch-search
+    - terraform init -backend=false
+    - terraform validate
+    - terraform fmt -check -recursive
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request"
+      changes: [terraform/**/*]
+
+build:search-image:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $DOCKER_IMAGE -f docker/Dockerfile.solr .
+    - docker push $DOCKER_IMAGE
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_BRANCH =~ /^release\/.*/
+
+security:scan:
+  stage: security
+  image: aquasec/trivy:latest
+  script:
+    - trivy image --exit-code 1 --severity HIGH,CRITICAL $DOCKER_IMAGE
+  allow_failure: true
+  needs: [build:search-image]
+
+deploy:staging:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - echo "Would update ECS/K8s with $DOCKER_IMAGE here – plug in deploy step"
+  environment:
+    name: staging
+  when: manual
+  needs: [build:search-image]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
